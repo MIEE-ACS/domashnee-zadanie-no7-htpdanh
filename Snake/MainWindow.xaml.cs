@@ -20,24 +20,29 @@ namespace Snake
     /// </summary>
     public partial class MainWindow : Window
     {
-        //Поле на котором живет змея
+        //Поле на котором живет змея (noi ran o)
         Entity field;
-        // голова змеи
+        // голова змеи(dau ran)
         Head head;
-        // вся змея
+        // вся змея (than ran)
         List<PositionedEntity> snake;
         // яблоко
         Apple apple;
         //количество очков
         int score;
-        //таймер по которому 
+        //таймер по которому (diem)
         DispatcherTimer moveTimer;
-        
+
+        Entity start;
+
+        int highscore = 0;
+        //multiplier
+        int count = 0;
         //конструктор формы, выполняется при запуске программы
         public MainWindow()
         {
             InitializeComponent();
-            
+
             snake = new List<PositionedEntity>();
             //создаем поле 300х300 пикселей
             field = new Entity(600, 600, "pack://application:,,,/Resources/snake.png");
@@ -52,7 +57,7 @@ namespace Snake
         //метод перерисовывающий экран
         private void UpdateField()
         {
-            //обновляем положение элементов змеи
+            //обновляем положение элементов змеи (cap nhat vitri cua ran)
             foreach (var p in snake)
             {
                 Canvas.SetTop(p.image, p.y);
@@ -62,21 +67,24 @@ namespace Snake
             //обновляем положение яблока
             Canvas.SetTop(apple.image, apple.y);
             Canvas.SetLeft(apple.image, apple.x);
-            
+
             //обновляем количество очков
             lblScore.Content = String.Format("{0}000", score);
         }
 
+
+
+
         //обработчик тика таймера. Все движение происходит здесь
         void moveTimer_Tick(object sender, EventArgs e)
         {
-            //в обратном порядке двигаем все элементы змеи
+            //в обратном порядке двигаем все элементы змеи ( di chuyen tat ca phan tu cua con ran theo thu tu)
             foreach (var p in Enumerable.Reverse(snake))
             {
                 p.move();
             }
 
-            //проверяем, что голова змеи не врезалась в тело
+            //проверяем, что голова змеи не врезалась в тело (kiem tra dau con ran co dung than the k )
             foreach (var p in snake.Where(x => x != head))
             {
                 //если координаты головы и какой либо из частей тела совпадают
@@ -89,7 +97,7 @@ namespace Snake
                 }
             }
 
-            //проверяем, что голова змеи не вышла за пределы поля
+            //проверяем, что голова змеи не вышла за пределы поля (kiem tra dau ran k duoc dung tuong)
             if (head.x < 40 || head.x >= 540 || head.y < 40 || head.y >= 540)
             {
                 //мы проиграли
@@ -97,19 +105,39 @@ namespace Snake
                 tbGameOver.Visibility = Visibility.Visible;
                 return;
             }
-
-            //проверяем, что голова змеи врезалась в яблоко
+            labelx.Content = "x" + count.ToString();
+            //проверяем, что голова змеи врезалась в яблоко ( kiem tra xem dau co dung tao k )
             if (head.x == apple.x && head.y == apple.y)
             {
                 //увеличиваем счет
-                score++;
-                //двигаем яблоко на новое место
+                //if the snake eats apple two time,three time,... in 10 seconds, we increase multiplier.
+                if (count > 1) 
+                    { score = score + count; }
+                else
+                    score++;
+                //двигаем яблоко на новое место (tao sang mot vi tri bat ki)
                 apple.move();
-                // добавляем новый сегмент к змее
+                // добавляем новый сегмент к змее (them mot phan moi cho con ran)
                 var part = new BodyPart(snake.Last());
                 canvas1.Children.Add(part.image);
                 snake.Add(part);
+                //when snake eats apple, we add progressbar to countdown time
+                ProgressBar1.Visibility = Visibility.Visible;
+                ProgressBar1.Value = 20;
+                count++;
             }
+
+            ProgressBar1.Value--;
+            // if 10 seconds passed, we hide progressbar
+            if (ProgressBar1.Value == 0)
+            {
+                count = 0;
+                ProgressBar1.Visibility = Visibility.Hidden;
+            }
+            // show highscore 
+            if (highscore < score)
+                highscore = score;
+            lbhighscore.Content = highscore.ToString()+"000";
             //перерисовываем экран
             UpdateField();
         }
@@ -133,7 +161,6 @@ namespace Snake
                     break;
             }
         }
-
         // Обработчик нажатия кнопки "Start"
         private void button1_Click(object sender, RoutedEventArgs e)
         {
@@ -160,6 +187,12 @@ namespace Snake
             moveTimer.Start();
             UpdateField();
 
+
+            //progressBar
+            ProgressBar1.Minimum = 0;
+            ProgressBar1.Maximum = 20;
+            ProgressBar1.Visibility = Visibility.Hidden;
+            ProgressBar1.Value = 20;
         }
         
         public class Entity
@@ -200,6 +233,7 @@ namespace Snake
             }
 
             public virtual void move() { }
+            public virtual void move2() { }
 
             public int x
             {
@@ -225,6 +259,7 @@ namespace Snake
                 }
             }
         }
+        //class Bomb 
 
         public class Apple : PositionedEntity
         {
@@ -258,6 +293,7 @@ namespace Snake
 
             }
         }
+
 
         public class Head : PositionedEntity
         {
